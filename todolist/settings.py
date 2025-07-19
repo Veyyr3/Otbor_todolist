@@ -11,13 +11,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Добавить папку APPS
+sys.path.append(str(BASE_DIR / "APPS"))
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-u@xf#%(%p&iz@#3wftzkv-839y58gv0mj0797po9a3sw&3v#_^'
@@ -37,6 +39,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+
+    'APPS.todo.apps.TodoConfig',
+    # 'APPS.image.apps.ImageConfig',
 ]
 
 MIDDLEWARE = [
@@ -98,13 +104,15 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# AUTH_USER_MODEL = 'users.User'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bishkek'
 
 USE_I18N = True
 
@@ -114,9 +122,100 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+# Указываем, где лежат исходные статические файлы (SCSS, JS, картинки)
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+# Куда collectstatic будет складывать собранные файлы (для продакшена)
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+# куда сохранять фото
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+# STATICFILES_FINDERS
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Настройки REST
+REST_FRAMEWORK = {
+    # --- 1. Рендереры (как форматировать выходные данные) ---
+    # Определяет форматы, в которых API может отдавать данные (например, JSON, HTML).
+    # JSONRenderer - стандарт для API.
+    # BrowsableAPIRenderer добавляет красивый веб-интерфейс для просмотра API в браузере. В продакшене убрать
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ],
+
+    # --- 2. Парсеры (как принимать входные данные) ---
+    # Определяет форматы, в которых API может принимать данные (например, JSON для POST/PUT).
+    'DEFAULT_PARSER_CLASSES': [
+        'rest_framework.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',      # Для форм с данными application/x-www-form-urlencoded
+        'rest_framework.parsers.MultiPartParser', # Для форм с файлами (multipart/form-data)
+    ],
+
+    # --- 3. Аутентификация (как пользователи авторизуются) ---
+    # Определяет, какие классы аутентификации используются по умолчанию.
+    # SessionAuthentication: Для входа через сессии Django (обычно для браузера/admin-панели).
+    # BasicAuthentication: Для базовой HTTP-аутентификации (имя пользователя/пароль).
+    # TokenAuthentication: Для аутентификации по токену (популярно для мобильных/SPA).
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+        # 'rest_framework.authentication.TokenAuthentication', # Включите, если используете токены
+    ],
+
+    # --- 4. Разрешения (кто имеет доступ) ---
+    # Определяет, какие классы разрешений применяются по умолчанию к каждому представлению.
+    # AllowAny: Разрешает доступ всем (небезопасно для боевых API без других проверок).
+    # IsAuthenticated: Разрешает доступ только аутентифицированным пользователям.
+    # IsAdminUser: Разрешает доступ только администраторам.
+    # DjangoModelPermissions: Проверяет разрешения Django на основе модели.
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny', # <--- ВНИМАНИЕ: Очень открыто!
+        # 'rest_framework.permissions.IsAuthenticated', # Если хотите, чтобы только залогиненные пользователи могли что-то делать
+    ],
+
+    # --- 5. Ограничители (Rate Limiting) ---
+    # Ограничивает количество запросов от пользователя/IP за определенный период.
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle'
+    # ],
+    # 'DEFAULT_THROTTLE_RATES': {
+    #     'anon': '100/day', # 100 запросов в день для неаутентифицированных
+    #     'user': '1000/day' # 1000 запросов в день для аутентифицированных
+    # },
+
+    # --- 6. Пагинация (Pagination) ---
+    # Определяет, как данные будут разбиваться на страницы при получении списков.
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    # 'PAGE_SIZE': 10, # Количество элементов на странице
+
+    # --- 7. Фильтрация и поиск ---
+    # Позволяет клиентам фильтровать или искать по данным.
+    # 'DEFAULT_FILTER_BACKENDS': [
+    #     'django_filters.rest_framework.DjangoFilterBackend', # Требует pip install django-filter
+    #     'rest_framework.filters.SearchFilter',
+    #     'rest_framework.filters.OrderingFilter',
+    # ],
+
+    # --- 8. Настройки валидации ---
+    # Поведение валидации, например, как обрабатываются ошибки.
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+    
+    # --- 9. Формат даты и времени ---
+    # Определяет формат для полей даты и времени в сериализаторах.
+    'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S", # Пример: "2025-07-16 15:30:00"
+}
