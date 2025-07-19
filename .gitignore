@@ -18,7 +18,7 @@ htmlcov/
 # Django-specific
 media/         
 static_cdn/    
-*.sqlite3      
+# *.sqlite3      
 local_settings.py 
 
 # Editors and IDEs
