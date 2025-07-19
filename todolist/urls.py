@@ -19,5 +19,5 @@ router.register(r'task', TaskViewSet, basename='task'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include(router.urls)),
+    path('api/v1/', include(router.urls)), # пропишите http://127.0.0.1:8000/api/v1/task
 ]
